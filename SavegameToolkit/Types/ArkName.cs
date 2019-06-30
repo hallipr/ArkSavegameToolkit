@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 
 namespace SavegameToolkit.Types {
 
-    [JsonConverter(typeof(ToStringJsonConverter))]
     public sealed class ArkName : IComparable<ArkName>, IComparable, IEquatable<ArkName> {
 
         private readonly string content;
@@ -25,7 +23,7 @@ namespace SavegameToolkit.Types {
         public static readonly ArkName NameNone = ConstantPlain("None");
 
         private ArkName(string content) {
-            Match matcher = nameIndexPattern.Match(content);
+            var matcher = nameIndexPattern.Match(content);
             if (matcher.Success) {
                 Name = matcher.Groups[1].Value;
                 Instance = int.Parse(matcher.Groups[2].Value) + 1;
@@ -50,7 +48,7 @@ namespace SavegameToolkit.Types {
         /// <param name="name"></param>
         /// <returns></returns>
         public static ArkName From(string name) {
-            if (name == null || !nameCache.TryGetValue(name, out ArkName value)) {
+            if (name == null || !nameCache.TryGetValue(name, out var value)) {
                 value = new ArkName(name);
                 nameCache.Add(name, value);
             }
@@ -64,9 +62,9 @@ namespace SavegameToolkit.Types {
         /// <param name="instance"></param>
         /// <returns></returns>
         public static ArkName From(string name, int instance) {
-            string instanceName = instance == 0 ? name : $"{name}_{instance - 1}";
+            var instanceName = instance == 0 ? name : $"{name}_{instance - 1}";
 
-            if (instanceName == null || !nameCache.TryGetValue(instanceName, out ArkName value)) {
+            if (instanceName == null || !nameCache.TryGetValue(instanceName, out var value)) {
                 value = new ArkName(name, instance, instanceName);
                 nameCache.Add(instanceName, value);
             }
@@ -86,7 +84,7 @@ namespace SavegameToolkit.Types {
         /// <param name="name"></param>
         /// <returns></returns>
         public static ArkName Constant(string name) {
-            if (name == null || !nameCache.TryGetValue(name, out ArkName value)) {
+            if (name == null || !nameCache.TryGetValue(name, out var value)) {
                 value = new ArkName(name);
                 nameCache.Add(name, value);
             }
@@ -101,8 +99,8 @@ namespace SavegameToolkit.Types {
         /// <param name="instance"></param>
         /// <returns></returns>
         public static ArkName Constant(string name, int instance) {
-            string instanceName = instance == 0 ? name : $"{name}_{instance - 1}";
-            if (instanceName == null || !nameCache.TryGetValue(instanceName, out ArkName value)) {
+            var instanceName = instance == 0 ? name : $"{name}_{instance - 1}";
+            if (instanceName == null || !nameCache.TryGetValue(instanceName, out var value)) {
                 value = new ArkName(name, instance, instanceName);
                 nameCache.Add(instanceName, value);
             }

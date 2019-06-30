@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SavegameToolkit.Propertys;
 using SavegameToolkit.Types;
 
@@ -21,24 +19,12 @@ namespace SavegameToolkit.Structs {
         }
 
         public void Init(ArkArchive archive) {
-            IProperty property = PropertyRegistry.ReadBinary(archive);
+            var property = PropertyRegistry.ReadBinary(archive);
 
             while (property != null) {
                 Properties.Add(property);
                 property = PropertyRegistry.ReadBinary(archive);
             }
-        }
-
-        public StructPropertyList(JArray node) {
-            Init(node);
-        }
-
-        public void Init(JObject node) {
-            throw new NotImplementedException();
-        }
-
-        public void Init(JArray node) {
-            Properties = node.Select(n => PropertyRegistry.ReadJson((JObject)n)).ToList();
         }
 
         private List<IProperty> properties = new List<IProperty>();
@@ -50,32 +36,8 @@ namespace SavegameToolkit.Structs {
 
         public bool IsNative => false;
 
-        public void WriteJson(JsonTextWriter generator, WritingOptions writingOptions) {
-            if (writingOptions.Compact) {
-                generator.WriteStartObject();
-            } else {
-                generator.WriteStartArray();
-            }
-
-            foreach (IProperty property in Properties) {
-                property.WriteJson(generator, writingOptions);
-            }
-
-            if (writingOptions.Compact) {
-                generator.WriteEndObject();
-            } else {
-                generator.WriteEndArray();
-            }
-        }
-
-        public void WriteBinary(ArkArchive archive) {
-            Properties.ForEach(p => p.WriteBinary(archive));
-
-            archive.WriteName(ArkName.NameNone);
-        }
-
         public int Size(NameSizeCalculator nameSizer) {
-            int size = nameSizer(ArkName.NameNone);
+            var size = nameSizer(ArkName.NameNone);
 
             size += Properties.Sum(p => p.CalculateSize(nameSizer));
 

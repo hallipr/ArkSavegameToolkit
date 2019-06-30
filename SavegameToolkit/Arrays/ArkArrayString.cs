@@ -11,9 +11,9 @@ namespace SavegameToolkit.Arrays {
         //private static long serialVersionUID = 1L;
 
         public override void Init(ArkArchive archive, PropertyArray property) {
-            int size = archive.ReadInt();
+            var size = archive.ReadInt();
 
-            for (int n = 0; n < size; n++) {
+            for (var n = 0; n < size; n++) {
                 Add(archive.ReadString());
             }
         }
@@ -21,17 +21,11 @@ namespace SavegameToolkit.Arrays {
         public override ArkName Type => TYPE;
 
         public override int CalculateSize(NameSizeCalculator nameSizer) {
-            int size = sizeof(int);
+            var size = sizeof(int);
 
             size += this.Sum(ArkArchive.GetStringLength);
 
             return size;
-        }
-
-        public override void WriteBinary(ArkArchive archive) {
-            archive.WriteInt(Count);
-
-            ForEach(archive.WriteString);
         }
 
     }

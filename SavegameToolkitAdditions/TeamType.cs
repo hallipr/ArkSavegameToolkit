@@ -41,7 +41,7 @@ namespace SavegameToolkitAdditions
         }
 
         public static bool IsTamed(this TeamType teamType) {
-            TeamTypeAttribute teamTypeAttribute = getAttr(teamType);
+            var teamTypeAttribute = getAttr(teamType);
             return teamTypeAttribute?.Tamed ?? false;
         }
 

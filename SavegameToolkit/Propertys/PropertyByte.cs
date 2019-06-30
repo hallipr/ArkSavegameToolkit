@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using SavegameToolkit.Types;
+﻿using SavegameToolkit.Types;
 
 namespace SavegameToolkit.Propertys {
 
@@ -33,32 +31,6 @@ namespace SavegameToolkit.Propertys {
             base.Init(archive, name);
             EnumType = archive.ReadName();
             Value = new ArkByteValue(archive, EnumType != ArkName.NameNone);
-        }
-
-        public override void Init(JObject node) {
-            base.Init(node);
-            EnumType = ArkName.From(node.Value<string>("enum") ?? ArkName.NameNone.ToString());
-            Value = new ArkByteValue(node.Value<byte>("value"));
-        }
-
-        protected override void writeJsonValue(JsonTextWriter generator, WritingOptions writingOptions) {
-            if (EnumType != ArkName.NameNone) {
-                if (writingOptions.Compact) {
-                    generator.WriteValue(EnumType.ToString());
-                } else {
-                    generator.WriteField("enum", EnumType.ToString());
-                }
-            } else {
-                if (!writingOptions.Compact) {
-                    generator.WritePropertyName("value");
-                }
-                Value.WriteJson(generator);
-            }
-        }
-
-        protected override void writeBinaryValue(ArkArchive archive) {
-            archive.WriteName(EnumType);
-            Value.WriteBinary(archive);
         }
 
         protected override int calculateAdditionalSize(NameSizeCalculator nameSizer) => nameSizer(EnumType);

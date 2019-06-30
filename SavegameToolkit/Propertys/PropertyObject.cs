@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using SavegameToolkit.Types;
+﻿using SavegameToolkit.Types;
 
 namespace SavegameToolkit.Propertys {
 
@@ -18,20 +16,6 @@ namespace SavegameToolkit.Propertys {
             base.Init(archive, name);
             Value = new ObjectReference(archive, DataSize);
         }
-
-        public override void Init(JObject node) {
-            base.Init(node);
-            Value = new ObjectReference(node["value"], DataSize);
-        }
-
-        protected override void writeJsonValue(JsonTextWriter generator, WritingOptions writingOptions) {
-            if (!writingOptions.Compact) {
-                generator.WritePropertyName("value");
-            }
-            Value.WriteJson(generator, writingOptions);
-        }
-
-        protected override void writeBinaryValue(ArkArchive archive) => Value.WriteBinary(archive);
 
         protected override int calculateDataSize(NameSizeCalculator nameSizer) => Value.Size(nameSizer);
 

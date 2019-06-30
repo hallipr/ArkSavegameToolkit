@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-
+﻿
 namespace SavegameToolkit.Types {
 
     public class ArkByteValue : INameContainer {
@@ -19,10 +17,6 @@ namespace SavegameToolkit.Types {
             readBinary(archive, name);
         }
 
-        public ArkByteValue(JToken node) {
-            readJson(node);
-        }
-
         public bool IsFromEnum() {
             return NameValue != null;
         }
@@ -39,21 +33,6 @@ namespace SavegameToolkit.Types {
 
         public ArkName NameValue { get; set; }
 
-        private void readJson(JToken node) {
-            if (node.Type == JTokenType.String) {
-                NameValue = ArkName.From(node.Value<string>());
-            } else {
-                byteValue = node.Value<byte>();
-            }
-        }
-
-        public void WriteJson(JsonTextWriter generator) {
-            if (NameValue != null) {
-                generator.WriteValue(NameValue.ToString());
-            } else {
-                generator.WriteValue(ByteValue);
-            }
-        }
 
         public int getSize(NameSizeCalculator nameSizer) {
             return NameValue != null ? nameSizer(NameValue) : 1;
@@ -64,14 +43,6 @@ namespace SavegameToolkit.Types {
                 NameValue = archive.ReadName();
             } else {
                 byteValue = archive.ReadByte();
-            }
-        }
-
-        public void WriteBinary(ArkArchive archive) {
-            if (NameValue != null) {
-                archive.WriteName(NameValue);
-            } else {
-                archive.WriteByte(ByteValue);
             }
         }
 

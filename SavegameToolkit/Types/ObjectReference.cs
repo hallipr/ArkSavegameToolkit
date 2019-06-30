@@ -1,6 +1,4 @@
 ﻿using System.Diagnostics;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace SavegameToolkit.Types {
 
@@ -40,11 +38,6 @@ namespace SavegameToolkit.Types {
             readBinary(archive);
         }
 
-        public ObjectReference(JToken node, int length) {
-            Length = length;
-            readJson(node);
-        }
-
         public override string ToString() {
             return $"ObjectReference [ObjectType={ObjectType}, ObjectId={ObjectId}, ObjectString={ObjectString}, Length={Length}]";
         }
@@ -57,39 +50,6 @@ namespace SavegameToolkit.Types {
             return null;
         }
 
-        private void readJson(JToken node) {
-            switch (node.Type) {
-                case JTokenType.Integer:
-                    ObjectId = node.Value<int>();
-                    ObjectType = TypeId;
-                    break;
-                case JTokenType.String:
-                    ObjectString = ArkName.From(node.Value<string>());
-                    ObjectType = TypePath;
-                    break;
-                default:
-                    ObjectString = ArkName.From(node.Value<string>("value"));
-                    ObjectType = node.Value<bool>("short") ? TypePathNoType : TypePath;
-                    break;
-            }
-        }
-
-        public void WriteJson(JsonTextWriter writer, WritingOptions writingOptions) {
-            switch (ObjectType) {
-                case TypeId:
-                    writer.WriteValue(ObjectId);
-                    break;
-                case TypePath:
-                    writer.WriteValue(ObjectString.ToString());
-                    break;
-                case TypePathNoType:
-                    writer.WriteStartObject();
-                    writer.WriteField("value", ObjectString.ToString());
-                    writer.WriteField("short", true);
-                    writer.WriteEndObject();
-                    break;
-            }
-        }
 
         public int Size(NameSizeCalculator nameSizer) {
             switch (ObjectType) {
@@ -115,7 +75,7 @@ namespace SavegameToolkit.Types {
                         ObjectString = archive.ReadName();
                         break;
                     default:
-                        archive.Position = archive.Position - 4;
+                        archive.Position -= 4;
                         ObjectType = TypePathNoType;
                         ObjectString = archive.ReadName();
                         break;
@@ -126,23 +86,7 @@ namespace SavegameToolkit.Types {
                 ObjectId = archive.ReadInt();
             } else {
                 Debug.WriteLine($"Warning: ObjectReference with length value {Length} at {archive.Position:X}");
-                archive.Position = archive.Position + Length;
-            }
-        }
-
-        public void WriteBinary(ArkArchive archive) {
-            if (ObjectType == TypePath || Length >= 8 && ObjectType != TypePathNoType) {
-                archive.WriteInt(ObjectType);
-            }
-
-            switch (ObjectType) {
-                case TypeId:
-                    archive.WriteInt(ObjectId);
-                    break;
-                case TypePath:
-                case TypePathNoType:
-                    archive.WriteName(ObjectString);
-                    break;
+                archive.Position += Length;
             }
         }
 

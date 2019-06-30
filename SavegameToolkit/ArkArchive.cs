@@ -55,21 +55,6 @@ namespace SavegameToolkit {
             totalOffset = 0;
         }
 
-        private ArkArchive(ArkArchive toClone) {
-            throw new NotImplementedException("Broken feature");
-#pragma warning disable 162
-            mbb = new MemoryStream();
-            toClone.mbb.CopyTo(mbb);
-            NameTable = toClone.NameTable;
-            nameMap = toClone.nameMap;
-            nameOffset = toClone.nameOffset;
-            HasInstanceInNameTable = toClone.HasInstanceInNameTable;
-            state = toClone.state;
-            isSlice = toClone.isSlice;
-            totalOffset = toClone.totalOffset;
-#pragma warning restore 162
-        }
-
         private ArkArchive(ArkArchive toClone, int size) {
             if (toClone.mbb.Position + size > toClone.mbb.Length) {
                 toClone.DebugMessage($"Requesting {size} bytes with only {toClone.mbb.Length - toClone.mbb.Position} bytes available");
@@ -83,8 +68,6 @@ namespace SavegameToolkit {
             isSlice = true;
         }
 
-        public ArkArchive Clone() => new ArkArchive(this);
-
         public ArkArchive Slice(int size) => new ArkArchive(this, size);
 
         public void SetNameTable(List<string> nameTable, int offset = 1, bool instanceInTable = false) {
@@ -92,11 +75,11 @@ namespace SavegameToolkit {
                 NameTable = nameTable.ToList();
                 nameOffset = offset;
                 HasInstanceInNameTable = instanceInTable;
-                Dictionary<string, int> nameMapBuilder = new Dictionary<string, int>();
+                var nameMapBuilder = new Dictionary<string, int>();
 
-                int index = offset;
+                var index = offset;
 
-                foreach (string name in nameTable) {
+                foreach (var name in nameTable) {
                     nameMapBuilder[name] = index++;
                 }
 
@@ -117,11 +100,11 @@ namespace SavegameToolkit {
         public long Limit => mbb.Length;
 
         public void SkipString() {
-            int size = mbbReader.ReadInt32();
+            var size = mbbReader.ReadInt32();
 
-            bool multibyte = size < 0;
-            int absSize = Math.Abs(size);
-            int readSize = multibyte ? absSize * 2 : absSize;
+            var multibyte = size < 0;
+            var absSize = Math.Abs(size);
+            var readSize = multibyte ? absSize * 2 : absSize;
 
             if (readSize + mbb.Position > mbb.Length) {
                 DebugMessage($"Trying to skip {readSize} bytes with just {mbb.Length - mbb.Position} bytes left");
@@ -152,7 +135,7 @@ namespace SavegameToolkit {
         #region read data
 
         public string ReadString() {
-            int size = mbbReader.ReadInt32();
+            var size = mbbReader.ReadInt32();
 
             // ReSharper disable once SwitchStatementMissingSomeCases
             switch (size) {
@@ -166,27 +149,27 @@ namespace SavegameToolkit {
                     return string.Empty;
             }
 
-            bool multibyte = size < 0;
-            int absSize = Math.Abs(size);
-            int readSize = multibyte ? absSize * 2 : absSize;
+            var multibyte = size < 0;
+            var absSize = Math.Abs(size);
+            var readSize = multibyte ? absSize * 2 : absSize;
 
             if (readSize + mbb.Position > mbb.Length) {
                 DebugMessage($"Trying to read {readSize} bytes with just {mbb.Length - mbb.Position} bytes left");
                 throw new IndexOutOfRangeException();
             }
 
-            bool isLarge = absSize > bufferSize;
+            var isLarge = absSize > bufferSize;
 
             if (isLarge && reportLargeStrings) {
                 DebugMessage($"String ({absSize}) larger than internal Buffer ({bufferSize})");
             }
 
             if (multibyte) {
-                byte[] buffer = isLarge ? new byte[absSize] : smallByteBuffer;
+                var buffer = isLarge ? new byte[absSize] : smallByteBuffer;
                 mbbReader.Read(buffer, 0, readSize);
                 return Encoding.Unicode.GetString(buffer, 0, readSize - 2);
             } else {
-                byte[] buffer = isLarge ? new byte[absSize] : smallByteBuffer;
+                var buffer = isLarge ? new byte[absSize] : smallByteBuffer;
                 mbb.Read(buffer, 0, absSize);
 
                 return Encoding.ASCII.GetString(buffer, 0, absSize - 1);
@@ -202,20 +185,20 @@ namespace SavegameToolkit {
         }
 
         private ArkName readNameFromTable() {
-            int id = mbbReader.ReadInt32();
-            int internalId = id - nameOffset;
+            var id = mbbReader.ReadInt32();
+            var internalId = id - nameOffset;
 
             if (internalId < 0 || internalId >= NameTable.Count) {
                 DebugMessage($"Found invalid nametable index {id} ({internalId})", -4);
                 return null;
             }
 
-            string name = NameTable[internalId];
+            var name = NameTable[internalId];
             if (HasInstanceInNameTable) {
                 return ArkName.From(name);
             }
 
-            int instance = mbbReader.ReadInt32();
+            var instance = mbbReader.ReadInt32();
 
             // Get or create ArkName
             return ArkName.From(name, instance);
@@ -254,132 +237,11 @@ namespace SavegameToolkit {
         }
 
         public bool ReadBool() {
-            int val = mbbReader.ReadInt32();
+            var val = mbbReader.ReadInt32();
             if (val < 0 || val > 1) {
                 DebugMessage($"bool with value {val}, returning true", -4);
             }
             return val != 0;
-        }
-
-        #endregion
-
-        #region write data
-
-        /// <summary>
-        /// Writes the index of name in nameTable into the ArkArchive.
-        ///
-        /// Writes the nameIndex of name into the ArkArchive.
-        ///
-        /// Ensures name is in the current nameTable.
-        /// </summary>
-        /// <param name="name"></param>
-        private void writeNameIntoTable(ArkName name) {
-            if (HasInstanceInNameTable) {
-                if (!nameMap.TryGetValue(name.ToString(), out int index)) {
-                    throw new InvalidOperationException("Uncollected Name: " + name);
-                }
-
-                mbbWriter.Write(index);
-            } else {
-                if (!nameMap.TryGetValue(name.Name, out int index)) {
-                    throw new InvalidOperationException("Uncollected Name: " + name.Name);
-                }
-
-                mbbWriter.Write(index);
-                mbbWriter.Write(name.Instance);
-            }
-        }
-
-        /// <summary>
-        /// Writes string to the archive If string contains non-ascii chars a multibyte string will be written
-        /// </summary>
-        /// <param name="s"></param>
-        public void WriteString(string s) {
-            if (s == null) {
-                mbbWriter.Write(0);
-                return;
-            }
-
-            if (string.IsNullOrEmpty(s)) {
-                mbbWriter.Write(1);
-                mbbWriter.Write((byte)0);
-                return;
-            }
-
-            int length = s.Length + 1;
-
-            if (isMultibyte(s)) {
-                mbbWriter.Write(-length);
-                mbbWriter.Write(s.ToCharArray());
-                mbb.Seek(length * 2 - 2, SeekOrigin.Current);
-                mbbWriter.Write((short)0);
-            } else {
-                mbbWriter.Write(length);
-                mbbWriter.Write(Encoding.ASCII.GetBytes(s));
-                mbbWriter.Write((byte)0);
-            }
-        }
-
-        public void WriteName(ArkName name) {
-            if (HasNameTable && UseNameTable) {
-                writeNameIntoTable(name);
-            } else {
-                WriteString(name.ToString());
-            }
-        }
-
-        public void WriteLong(long value) {
-            mbbWriter.Write(value);
-        }
-
-        public void WriteInt(int value) {
-            mbbWriter.Write(value);
-        }
-
-        public void WriteShort(short value) {
-            mbbWriter.Write(value);
-        }
-
-        public void WriteByte(byte value) {
-            mbbWriter.Write(value);
-        }
-
-        public void WriteSByte(sbyte value) {
-            mbbWriter.Write(value);
-        }
-
-        public void WriteDouble(double value) {
-            mbbWriter.Write(value);
-        }
-
-        public void WriteFloat(float value) {
-            mbbWriter.Write(value);
-        }
-
-        /// <summary>
-        /// Writes a bool as an int
-        /// </summary>
-        /// <param name="value"></param>
-        public void WriteBool(bool value) {
-            mbbWriter.Write(value ? 1 : 0);
-        }
-
-        /// <summary>
-        /// Writes <code>value</code> directly to the archive.
-        /// </summary>
-        /// <param name="value"></param>
-        public void WriteBytes(byte[] value) {
-            mbbWriter.Write(value);
-        }
-
-        /// <summary>
-        /// Writes <code>value</code> directly to the archive.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="offset"></param>
-        /// <param name="length"></param>
-        public void WriteBytes(byte[] value, int offset, int length) {
-            mbbWriter.Write(value, offset, length);
         }
 
         #endregion
@@ -392,7 +254,10 @@ namespace SavegameToolkit {
             get => state.unknownData;
             set {
                 if (value == false)
+                {
                     throw new ArgumentOutOfRangeException(nameof(value), "Only setting to true is allowed");
+                }
+
                 state.unknownData = true;
             }
         }
@@ -411,7 +276,10 @@ namespace SavegameToolkit {
                 // Set the unknownNames flag to true, except for slices.
                 // Slices have either their own nameTable or no nameTable at all.
                 if (value == false)
+                {
                     throw new ArgumentOutOfRangeException(nameof(value), "Only setting to true is allowed");
+                }
+
                 if (isSlice) {
                     state.unknownData = true;
                 } else {
@@ -422,7 +290,10 @@ namespace SavegameToolkit {
 
         public void DebugMessage(string message, int offset = 0) {
             if (!Debugger.IsAttached)
+            {
                 return;
+            }
+
             Debug.Write($"{message} at 0x{mbb.Position + offset:X4}");
             Debug.WriteIf(totalOffset > 0, $" (0x{totalPosition + offset:X4})");
             Debug.WriteLine(string.Empty);
@@ -440,7 +311,7 @@ namespace SavegameToolkit {
             if (string.IsNullOrEmpty(value)) {
                 return 5;
             }
-            int length = value.Length + 1;
+            var length = value.Length + 1;
 
             return (isMultibyte(value) ? length * 2 : length) + 4;
         }

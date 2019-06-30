@@ -32,11 +32,11 @@ namespace SavegameToolkit {
         };
 
         public static byte[] ToBytes(this Guid guid) {
-            byte[] bytes = guid.ToByteArray();
+            var bytes = guid.ToByteArray();
 
-            byte[] result = new byte[16];
+            var result = new byte[16];
 
-            foreach (KeyValuePair<int, int> pair in translation) {
+            foreach (var pair in translation) {
                 result[pair.Key] = bytes[pair.Value];
             }
 
@@ -44,9 +44,9 @@ namespace SavegameToolkit {
         }
 
         public static Guid ToGuid(this byte[] bytes) {
-            byte[] temp = new byte[16];
+            var temp = new byte[16];
 
-            foreach (KeyValuePair<int, int> pair in translation) {
+            foreach (var pair in translation) {
                 temp[pair.Value] = bytes[pair.Key];
             }
 

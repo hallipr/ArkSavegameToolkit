@@ -1,22 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
-namespace SavegameToolkitAdditions {
-
-    public static class ArkDataReader {
-        public static ArkData ReadFromFile(string filename) {
-            using (StreamReader reader = File.OpenText(filename)) {
-                return JsonSerializer.CreateDefault(new JsonSerializerSettings {
-                                ContractResolver = new CamelCasePropertyNamesContractResolver()
-                        })
-                        .Deserialize<ArkData>(new JsonTextReader(reader));
-            }
-        }
-    }
-
+namespace SavegameToolkitAdditions
+{
     public class ArkData {
         private Dictionary<string, ArkDataEntry> items;
         private Dictionary<string, ArkDataEntry> creatures;
@@ -31,7 +18,7 @@ namespace SavegameToolkitAdditions {
                 items = Items?.ToDictionary(entry => entry.Class);
             }
 
-            return items != null && items.TryGetValue(classString, out ArkDataEntry arkDataEntry) ? arkDataEntry : null;
+            return items != null && items.TryGetValue(classString, out var arkDataEntry) ? arkDataEntry : null;
         }
 
         public ArkDataEntry GetCreatureForClass(string classString) {
@@ -39,7 +26,7 @@ namespace SavegameToolkitAdditions {
                 creatures = Creatures?.ToDictionary(entry => entry.Class);
             }
 
-            return creatures != null && creatures.TryGetValue(classString, out ArkDataEntry arkDataEntry) ? arkDataEntry : null;
+            return creatures != null && creatures.TryGetValue(classString, out var arkDataEntry) ? arkDataEntry : null;
         }
 
         public ArkDataEntry GetStructureForClass(string classString) {
@@ -47,7 +34,7 @@ namespace SavegameToolkitAdditions {
                 structures = Structures?.ToDictionary(entry => entry.Class);
             }
 
-            return structures != null && structures.TryGetValue(classString, out ArkDataEntry arkDataEntry) ? arkDataEntry : null;
+            return structures != null && structures.TryGetValue(classString, out var arkDataEntry) ? arkDataEntry : null;
         }
     }
 

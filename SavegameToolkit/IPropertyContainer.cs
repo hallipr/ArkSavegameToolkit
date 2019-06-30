@@ -33,7 +33,7 @@ namespace SavegameToolkit {
         //}
 
         public static T GetTypedProperty<T>(this IPropertyContainer propertyContainer, string name, int index = 0) where T : IProperty {
-            foreach (IProperty prop in propertyContainer.Properties) {
+            foreach (var prop in propertyContainer.Properties) {
                 if (prop.Index == index && prop.NameString == name && prop is T variable) {
                     return variable;
                 }
@@ -43,7 +43,7 @@ namespace SavegameToolkit {
         }
 
         public static T GetPropertyValue<T>(this IPropertyContainer propertyContainer, string name, int index = 0, T defaultValue = default(T)) {
-            foreach (IProperty<T> prop in propertyContainer.Properties.OfType<IProperty<T>>()) {
+            foreach (var prop in propertyContainer.Properties.OfType<IProperty<T>>()) {
                 if (prop.Index == index && prop.NameString == name && prop.Value is T variable) {
                     return variable;
                 }
@@ -53,7 +53,7 @@ namespace SavegameToolkit {
         }
 
         public static U GetPropertyValue<T, U>(this IPropertyContainer propertyContainer, string name, int index = 0, U defaultValue = default(U), Func<T, U> map = null) {
-            T value = propertyContainer.GetPropertyValue<T>(name, index);
+            var value = propertyContainer.GetPropertyValue<T>(name, index);
             if (value == null || value.Equals(default(T))) {
                 return defaultValue;
             }

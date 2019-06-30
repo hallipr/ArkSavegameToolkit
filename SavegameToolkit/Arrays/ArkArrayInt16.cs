@@ -10,9 +10,9 @@ namespace SavegameToolkit.Arrays {
         //private static long serialVersionUID = 1L;
 
         public override void Init(ArkArchive archive, PropertyArray property) {
-            int size = archive.ReadInt();
+            var size = archive.ReadInt();
 
-            for (int n = 0; n < size; n++) {
+            for (var n = 0; n < size; n++) {
                 Add(archive.ReadShort());
             }
         }
@@ -20,14 +20,9 @@ namespace SavegameToolkit.Arrays {
         public override ArkName Type => TYPE;
 
         public override int CalculateSize(NameSizeCalculator nameSizer) {
-            return sizeof(int) + Count * sizeof(short);
+            return sizeof(int) + (Count * sizeof(short));
         }
 
-        public override void WriteBinary(ArkArchive archive) {
-            archive.WriteInt(Count);
-
-            ForEach(archive.WriteShort);
-        }
 
     }
 

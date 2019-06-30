@@ -22,7 +22,7 @@ namespace SavegameToolkitAdditions {
         public bool Debug { get; set; }
 
         public ObjectCollector(GameObjectContainer container, GameObject gameObject, bool followReferences, bool withComponents) {
-            Stack<IPropertyContainer> toVisit = new Stack<IPropertyContainer>();
+            var toVisit = new Stack<IPropertyContainer>();
             startIndex = 0;
 
             MappedObjects[gameObject.Id] = gameObject;
@@ -34,10 +34,10 @@ namespace SavegameToolkitAdditions {
         }
 
         public ObjectCollector(GameObjectContainer container, ArkName className, bool followReferences, bool withComponents) {
-            Stack<IPropertyContainer> toVisit = new Stack<IPropertyContainer>();
+            var toVisit = new Stack<IPropertyContainer>();
             startIndex = 0;
 
-            foreach (GameObject gameObject in container) {
+            foreach (var gameObject in container) {
                 if (gameObject.ClassName == className) {
                     MappedObjects[gameObject.Id] = gameObject;
                     toVisit.Push(gameObject);
@@ -51,7 +51,7 @@ namespace SavegameToolkitAdditions {
 
         public ObjectCollector(GameObjectContainer container, int startIndex = 0) {
             this.startIndex = startIndex;
-            foreach (GameObject obj in container) {
+            foreach (var obj in container) {
                 MappedObjects[obj.Id + startIndex] = obj;
             }
             insertIndex = MappedObjects.Count + startIndex;
@@ -59,29 +59,29 @@ namespace SavegameToolkitAdditions {
 
         private void visit(Stack<IPropertyContainer> toVisit, GameObjectContainer container, bool followReferences, bool withComponents) {
             while (toVisit.Any()) {
-                IPropertyContainer currentInstance = toVisit.Pop();
+                var currentInstance = toVisit.Pop();
 
                 if (followReferences) {
-                    foreach (IProperty property in currentInstance.Properties) {
+                    foreach (var property in currentInstance.Properties) {
                         if (property is PropertyObject po) {
-                            ObjectReference reference = po.Value;
-                            GameObject referenced = reference.GetObject(container);
+                            var reference = po.Value;
+                            var referenced = reference.GetObject(container);
                             if (referenced != null && !MappedObjects.ContainsKey(referenced.Id)) {
                                 MappedObjects[referenced.Id] = referenced;
                                 toVisit.Push(referenced);
                             }
                         } else if (property is PropertyArray pa) {
-                            IArkArray<IStruct> structList = pa.GetTypedValue<IStruct>();
-                            IArkArray<ObjectReference> objectReferenceList = pa.GetTypedValue<ObjectReference>();
+                            var structList = pa.GetTypedValue<IStruct>();
+                            var objectReferenceList = pa.GetTypedValue<ObjectReference>();
                             if (structList != null) {
-                                foreach (IStruct aStruct in structList) {
+                                foreach (var aStruct in structList) {
                                     if (aStruct is IPropertyContainer propertyContainer) {
                                         toVisit.Push(propertyContainer);
                                     }
                                 }
                             } else if (objectReferenceList != null) {
-                                foreach (ObjectReference reference in objectReferenceList) {
-                                    GameObject referenced = reference.GetObject(container);
+                                foreach (var reference in objectReferenceList) {
+                                    var referenced = reference.GetObject(container);
                                     if (referenced != null && !MappedObjects.ContainsKey(referenced.Id)) {
                                         MappedObjects[referenced.Id] = referenced;
                                         toVisit.Push(referenced);
@@ -89,7 +89,7 @@ namespace SavegameToolkitAdditions {
                                 }
                             }
                         } else if (property is PropertyStruct ps) {
-                            IStruct aStruct = ps.Value;
+                            var aStruct = ps.Value;
                             if (aStruct is IPropertyContainer propertyContainer) {
                                 toVisit.Push(propertyContainer);
                             }
@@ -98,9 +98,9 @@ namespace SavegameToolkitAdditions {
                 }
 
                 if (withComponents && currentInstance is GameObject) {
-                    GameObject gameObject = (GameObject)currentInstance;
+                    var gameObject = (GameObject)currentInstance;
 
-                    foreach (GameObject component in gameObject.Components.Values) {
+                    foreach (var component in gameObject.Components.Values) {
                         if (!MappedObjects.ContainsKey(component.Id)) {
                             MappedObjects[component.Id] = component;
                             toVisit.Push(component);
@@ -126,7 +126,7 @@ namespace SavegameToolkitAdditions {
         }
 
         public void Remove(int index) {
-            MappedObjects.TryGetValue(index, out GameObject removed);
+            MappedObjects.TryGetValue(index, out var removed);
             MappedObjects.Remove(index);
 
             if (removed != null) {
@@ -138,7 +138,7 @@ namespace SavegameToolkitAdditions {
         }
 
         public void Remove(GameObject gameObject) {
-            MappedObjects.TryGetValue(gameObject.Id, out GameObject removed);
+            MappedObjects.TryGetValue(gameObject.Id, out var removed);
             MappedObjects.Remove(gameObject.Id);
             if (removed != null) {
                 Deleted++;
@@ -150,7 +150,7 @@ namespace SavegameToolkitAdditions {
 
         public void Remove(ObjectReference reference) {
             if (reference.IsId && reference.ObjectId >= startIndex) {
-                MappedObjects.TryGetValue(reference.ObjectId, out GameObject removed);
+                MappedObjects.TryGetValue(reference.ObjectId, out var removed);
                 MappedObjects.Remove(reference.ObjectId);
                 if (removed != null) {
                     Deleted++;
@@ -175,16 +175,18 @@ namespace SavegameToolkitAdditions {
         }
 
         public IEnumerable<GameObject> Remap(int startId) {
-            List<GameObject> remappedList = new List<GameObject>(MappedObjects.Count);
+            var remappedList = new List<GameObject>(MappedObjects.Count);
 
             applyOrderRules(remappedList);
 
-            for (int i = 0; i < remappedList.Count; i++) {
+            for (var i = 0; i < remappedList.Count; i++) {
                 remappedList[i].Id = startId + i;
             }
 
-            foreach (GameObject gameObject in remappedList)
+            foreach (var gameObject in remappedList)
+            {
                 doRemap(gameObject);
+            }
 
             return remappedList;
         }
@@ -195,30 +197,33 @@ namespace SavegameToolkitAdditions {
         /// <param name="remappedList"></param>
         private void applyOrderRules(List<GameObject> remappedList) {
             //Dictionary<int, Dictionary<List<ArkName>, GameObject>> objectMap = new Dictionary<int, Dictionary<List<ArkName>, GameObject>>();
-            Dictionary<int, Dictionary<int, GameObject>> objectMap = new Dictionary<int, Dictionary<int, GameObject>>();
+            var objectMap = new Dictionary<int, Dictionary<int, GameObject>>();
 
             // First step: clear all component information and collect names
-            foreach (GameObject gameObject in MappedObjects.Values) {
+            foreach (var gameObject in MappedObjects.Values) {
                 gameObject.Components.Clear();
                 gameObject.Parent = null;
 
-                int mapKey = gameObject.FromDataFile ? gameObject.DataFileIndex : -1;
+                var mapKey = gameObject.FromDataFile ? gameObject.DataFileIndex : -1;
 
                 //objectMap.computeIfAbsent(mapKey, key => new HashMap<>()).putIfAbsent(gameObject.Names, gameObject);
                 if (!objectMap.ContainsKey(mapKey))
+                {
                     objectMap[mapKey] = new Dictionary<int, GameObject>();
+                }
+
                 if (!objectMap[mapKey].ContainsKey(gameObject.Names.HashCode())) {
                     objectMap[mapKey][gameObject.Names.HashCode()] = gameObject;
                 }
             }
 
             // Second step: rebuild component information
-            foreach (GameObject gameObject in MappedObjects.Values) {
-                Dictionary<int, GameObject> map = objectMap[gameObject.FromDataFile ? gameObject.DataFileIndex : -1];
+            foreach (var gameObject in MappedObjects.Values) {
+                var map = objectMap[gameObject.FromDataFile ? gameObject.DataFileIndex : -1];
                 if (gameObject.HasParentNames && map != null) {
-                    IEnumerable<ArkName> targetName = gameObject.ParentNames;
+                    var targetName = gameObject.ParentNames;
 
-                    GameObject parent = map[targetName.HashCode()];
+                    var parent = map[targetName.HashCode()];
                     if (parent != null) {
                         parent.AddComponent(gameObject);
                         gameObject.Parent = parent;
@@ -227,8 +232,8 @@ namespace SavegameToolkitAdditions {
             }
 
             // Third step: build list by adding all objects without parent + their components
-            List<GameObject> toVisit = new List<GameObject>();
-            foreach (GameObject gameObject in MappedObjects.Values) {
+            var toVisit = new List<GameObject>();
+            foreach (var gameObject in MappedObjects.Values) {
                 if (gameObject.Parent != null) {
                     continue;
                 }
@@ -238,12 +243,12 @@ namespace SavegameToolkitAdditions {
                 toVisit.AddRange(gameObject.Components.Values);
 
                 while (toVisit.Any()) {
-                    GameObject current = toVisit[0];
+                    var current = toVisit[0];
                     toVisit.RemoveAt(0);
 
                     remappedList.Add(current);
 
-                    foreach (GameObject o in current.Components.Values) {
+                    foreach (var o in current.Components.Values) {
                         toVisit.Insert(0, o);
                     }
                 }
@@ -257,31 +262,31 @@ namespace SavegameToolkitAdditions {
         /// </summary>
         /// <param name="instance"></param>
         private void doRemap(GameObject instance) {
-            Stack<IPropertyContainer> toVisit = new Stack<IPropertyContainer>();
+            var toVisit = new Stack<IPropertyContainer>();
             toVisit.Push(instance);
 
             while (toVisit.Any()) {
-                IPropertyContainer currentInstance = toVisit.Pop();
-                foreach (IProperty property in currentInstance.Properties) {
+                var currentInstance = toVisit.Pop();
+                foreach (var property in currentInstance.Properties) {
                     switch (property) {
                         case PropertyObject po: {
-                            ObjectReference reference = po.Value;
+                            var reference = po.Value;
                             if (reference.IsId && reference.ObjectId >= startIndex) {
                                 reference.ObjectId = MappedObjects[reference.ObjectId].Id;
                             }
                             break;
                         }
                         case PropertyArray pa: {
-                            IArkArray<IStruct> structList = pa.GetTypedValue<IStruct>();
-                            IArkArray<ObjectReference> objectReferenceList = pa.GetTypedValue<ObjectReference>();
+                            var structList = pa.GetTypedValue<IStruct>();
+                            var objectReferenceList = pa.GetTypedValue<ObjectReference>();
                             if (structList != null) {
-                                foreach (IStruct aStruct in structList) {
+                                foreach (var aStruct in structList) {
                                     if (aStruct is IPropertyContainer container) {
                                         toVisit.Push(container);
                                     }
                                 }
                             } else if (objectReferenceList != null) {
-                                foreach (ObjectReference reference in objectReferenceList) {
+                                foreach (var reference in objectReferenceList) {
                                     if (reference.IsId && reference.ObjectId >= startIndex) {
                                         reference.ObjectId = MappedObjects[reference.ObjectId].Id;
                                     }
@@ -290,7 +295,7 @@ namespace SavegameToolkitAdditions {
                             break;
                         }
                         case PropertyStruct ps: {
-                            IStruct aStruct = ps.Value;
+                            var aStruct = ps.Value;
                             if (aStruct is IPropertyContainer container) {
                                 toVisit.Push(container);
                             }

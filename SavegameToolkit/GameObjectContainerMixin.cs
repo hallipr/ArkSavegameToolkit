@@ -10,11 +10,11 @@ namespace SavegameToolkit {
 
         protected void addObject(GameObject gameObject, bool processNames) {
             if (processNames) {
-                if (ObjectMap.TryGetValue(gameObject.FromDataFile ? gameObject.DataFileIndex : -1, out Dictionary<int, GameObject> map)) {
+                if (ObjectMap.TryGetValue(gameObject.FromDataFile ? gameObject.DataFileIndex : -1, out var map)) {
                     if (gameObject.HasParentNames) {
-                        IEnumerable<ArkName> targetName = gameObject.ParentNames;
+                        var targetName = gameObject.ParentNames;
 
-                        if (map.TryGetValue(targetName.HashCode(), out GameObject parent)) {
+                        if (map.TryGetValue(targetName.HashCode(), out var parent)) {
                             parent.AddComponent(gameObject);
                             gameObject.Parent = parent;
                         }
@@ -38,7 +38,7 @@ namespace SavegameToolkit {
 
     public static class ArkNameExtensions {
         public static int HashCode(this IEnumerable<ArkName> arkNames) {
-            return arkNames.Aggregate(1, (current, arkName) => 31 * current + (arkName?.GetHashCode() ?? 0));
+            return arkNames.Aggregate(1, (current, arkName) => (31 * current) + (arkName?.GetHashCode() ?? 0));
         }
     }
 

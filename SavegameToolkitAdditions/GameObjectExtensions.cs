@@ -25,12 +25,12 @@ namespace SavegameToolkitAdditions {
         }
 
         public static bool IsTamed(this GameObject gameObject) {
-            TeamType teamType = TeamTypes.ForTeam(gameObject.GetPropertyValue<int>("TargetingTeam"));
+            var teamType = TeamTypes.ForTeam(gameObject.GetPropertyValue<int>("TargetingTeam"));
             return teamType.IsTamed();
         }
 
         public static bool IsUnclaimedBaby(this GameObject gameObject) {
-            TeamType teamType = TeamTypes.ForTeam(gameObject.GetPropertyValue<int>("TargetingTeam"));
+            var teamType = TeamTypes.ForTeam(gameObject.GetPropertyValue<int>("TargetingTeam"));
             return teamType == TeamType.Breeding;
         }
 
@@ -39,7 +39,7 @@ namespace SavegameToolkitAdditions {
         }
 
         public static bool IsWild(this GameObject gameObject) {
-            TeamType teamType = TeamTypes.ForTeam(gameObject.GetPropertyValue<int>("TargetingTeam"));
+            var teamType = TeamTypes.ForTeam(gameObject.GetPropertyValue<int>("TargetingTeam"));
             return !teamType.IsTamed();
         }
 
@@ -52,7 +52,7 @@ namespace SavegameToolkitAdditions {
         }
 
         public static GameObject CharacterStatusComponent(this GameObject gameObject) {
-            int? myCharacterStatusComponent = gameObject.GetPropertyValue<ObjectReference>("MyCharacterStatusComponent")?.ObjectId;
+            var myCharacterStatusComponent = gameObject.GetPropertyValue<ObjectReference>("MyCharacterStatusComponent")?.ObjectId;
             return myCharacterStatusComponent.HasValue
                     ? gameObject.Components.FirstOrDefault(component => component.Value.Id == myCharacterStatusComponent).Value
                     : gameObject.Components.FirstOrDefault(component => component.Key.Name.StartsWith("DinoCharacterStatus_")).Value;
@@ -63,21 +63,21 @@ namespace SavegameToolkitAdditions {
         }
 
         public static int GetBaseLevel(this GameObject gameObject, GameObjectContainer saveFile) {
-            ObjectReference objectReference = gameObject.GetPropertyValue<ObjectReference>("MyCharacterStatusComponent");
-            GameObject statusComponent = objectReference != null ? saveFile[objectReference] : null;
+            var objectReference = gameObject.GetPropertyValue<ObjectReference>("MyCharacterStatusComponent");
+            var statusComponent = objectReference != null ? saveFile[objectReference] : null;
 
             return statusComponent?.GetPropertyValue<int>("BaseCharacterLevel") ?? 1;
         }
 
         public static int GetFullLevel(this GameObject gameObject) {
-            GameObject statusComponent = gameObject.CharacterStatusComponent();
+            var statusComponent = gameObject.CharacterStatusComponent();
             return getFullLevel(statusComponent);
         }
 
         public static int GetFullLevel(this GameObject gameObject, GameObjectContainer saveFile) {
-            ObjectReference objectReference = gameObject.GetPropertyValue<ObjectReference>("MyCharacterStatusComponent");
+            var objectReference = gameObject.GetPropertyValue<ObjectReference>("MyCharacterStatusComponent");
 
-            GameObject statusComponent = objectReference != null ? saveFile[objectReference] : null;
+            var statusComponent = objectReference != null ? saveFile[objectReference] : null;
 
             return getFullLevel(statusComponent);
         }
@@ -87,8 +87,8 @@ namespace SavegameToolkitAdditions {
                 return 1;
             }
 
-            int baseLevel = statusComponent.GetPropertyValue<int>("BaseCharacterLevel", defaultValue: 1);
-            short extraLevel = statusComponent.GetPropertyValue<short>("ExtraCharacterLevel");
+            var baseLevel = statusComponent.GetPropertyValue<int>("BaseCharacterLevel", defaultValue: 1);
+            var extraLevel = statusComponent.GetPropertyValue<short>("ExtraCharacterLevel");
             return baseLevel + extraLevel;
         }
 
@@ -109,7 +109,7 @@ namespace SavegameToolkitAdditions {
         }
 
         public static long CreateDinoId(int id1, int id2) {
-            return (long)id1 << 32 | (id2 & 0xFFFFFFFFL);
+            return ((long)id1 << 32) | (id2 & 0xFFFFFFFFL);
         }
     }
 }

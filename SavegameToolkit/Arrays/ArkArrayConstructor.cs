@@ -1,22 +1,16 @@
-﻿using Newtonsoft.Json.Linq;
-using SavegameToolkit.Propertys;
+﻿using SavegameToolkit.Propertys;
 
 namespace SavegameToolkit.Arrays {
 
     public class ArkArrayConstructor {
 
         public delegate IArkArray Binary(ArkArchive archive, PropertyArray property);
-
-        public delegate IArkArray Json(JArray node, PropertyArray property);
-        
         public Binary BinaryConstructor { get; }
-        public Json JsonConstructor { get; }
 
-        public ArkArrayConstructor(Binary binaryConstructor, Json jsonConstructor) {
+        public ArkArrayConstructor(Binary binaryConstructor)
+        {
             BinaryConstructor = binaryConstructor;
-            JsonConstructor = jsonConstructor;
         }
-
     }
 
 }
